@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  role          Role
+  password      String
+  createdAt     DateTime       @default(now())
+  deletedAt     DateTime?
+  RefreshTokens RefreshTokens?
+  appointments  Appointment[]
+  Position      Position?      @relation(fields: [positionId], references: [id])
+  positionId    Int?
+}
+
+model RefreshTokens {
+  id         Int      @id @default(autoincrement())
+  employeeId Int      @unique
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  createdAt  DateTime @default(now())
+}
+
+model Client {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  address   String
+  phone     String
+  dni       String    @unique
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  pets      Pet[]
+}
+
+model Pet {
+  id           Int           @id @default(autoincrement())
+  name         String
+  birthday     DateTime
+  breed        String
+  species      String
+  gender       String
+  owner        Client        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId      Int
+  createdAt    DateTime      @default(now())
+  deletedAt    DateTime?
+  appointments Appointment[]
+}
+
+model Room {
+  id           Int           @id @default(autoincrement())
+  openAt       DateTime      @db.Time()
+  closeAt      DateTime      @db.Time()
+  name         String
+  appointments Appointment[]
+}
+
+model Appointment {
+  id          Int       @id @default(autoincrement())
+  date        DateTime
+  description String
+  Room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId      Int
+  Pet         Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+  petId       Int
+  atendedBy   Employee? @relation(fields: [atendedById], references: [id], onDelete: Cascade)
+  atendedById Int?
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+}
+
+model Position {
+  id        Int        @id @default(autoincrement())
+  name      String
+  employees Employee[]
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  RECEPTIONIST
+}
+
+model Config {
+  id            Int         @id @default(autoincrement())
+  group         ConfigGroup @relation(fields: [configGroupId], references: [id])
+  gruopId       Int
+  key           String
+  value         String
+  configGroupId Int
+}
+
+model ConfigGroup {
+  id      Int      @id @default(autoincrement())
+  name    String
+  configs Config[]
+}
