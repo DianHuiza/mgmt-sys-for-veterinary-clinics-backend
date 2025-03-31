@@ -38,41 +38,38 @@ export class AuthService {
       user.role,
     );
 
+    this.updateRefreshToken(user.id, refreshToken);
+
     return {
       token: `Bearer ${token}`,
       refreshToken: `Bearer ${refreshToken}`,
-      user: { name: user.name, role: user.role, id: user.id },
+      user: { name: user.name, role: user.role, sub: user.id },
     };
   }
 
   async refreshToken(userId, providedRefreshToken) {
-    const { employee, ...refreshToken } =
-      await this.prisma.refreshTokens.findFirst({
-        where: {
-          token: providedRefreshToken,
-          employeeId: userId,
-        },
-        include: {
-          employee: true,
-        },
-      });
-    if (refreshToken?.token !== providedRefreshToken) {
-      throw new UnauthorizedException();
-    }
-    const { token, refreshToken: newRefreshToken } = this.generateNewTokens(
-      employee.id,
-      employee.role,
-      employee.name,
-    );
-
-    this.prisma.refreshTokens.update({
+    const tokenData = await this.prisma.refreshTokens.findFirst({
       where: {
         token: providedRefreshToken,
+        employeeId: userId,
       },
-      data: {
-        token: newRefreshToken,
+      include: {
+        employee: true,
       },
     });
+    if (!tokenData || tokenData?.token !== providedRefreshToken) {
+      throw new UnauthorizedException();
+    }
+
+    const { employee } = tokenData;
+
+    const { token, refreshToken: newRefreshToken } = this.generateNewTokens(
+      employee.id,
+      employee.name,
+      employee.role,
+    );
+
+    this.updateRefreshToken(userId, newRefreshToken);
 
     return {
       token: `Bearer ${token}`,
@@ -100,7 +97,30 @@ export class AuthService {
     };
   }
 
+  private async updateRefreshToken(userId: number, refreshToken: string) {
+    await this.prisma.refreshTokens.upsert({
+      where: {
+        employeeId: userId,
+      },
+      update: {
+        token: refreshToken,
+      },
+      create: {
+        employeeId: userId,
+        token: refreshToken,
+      },
+    });
+  }
+
   verifyToken(token) {
     return this.jwt.verify(token, { secret: env.JWT_SECRET });
+  }
+
+  blockToken(userId: number) {
+    return this.prisma.refreshTokens.delete({
+      where: {
+        employeeId: userId,
+      },
+    });
   }
 }

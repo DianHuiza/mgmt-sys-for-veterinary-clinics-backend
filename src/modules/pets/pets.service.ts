@@ -6,22 +6,54 @@ import { CreatePetDto, UpdatePetDto } from './dto/pets.dto';
 export class PetsService {
   constructor(private readonly prisma: PrismaService) {}
   create(createPetDto: CreatePetDto) {
-    return 'This action adds a new pet';
+    return this.prisma.pet.create({
+      data: createPetDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all pets`;
+  findAll(page: number, pageSize: number, showDeleted: boolean = false) {
+    return this.prisma.pet.findMany({
+      where: {
+        deletedAt: showDeleted ? undefined : null,
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} pet`;
+    return this.prisma.pet.findUnique({
+      where: {
+        id,
+      },
+    });
   }
 
   update(id: number, updatePetDto: UpdatePetDto) {
-    return `This action updates a #${id} pet`;
+    return this.prisma.pet.update({
+      where: {
+        id,
+      },
+      data: updatePetDto,
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} pet`;
+    return this.prisma.pet.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
+  softRemove(id: number) {
+    return this.prisma.pet.update({
+      where: {
+        id,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
   }
 }

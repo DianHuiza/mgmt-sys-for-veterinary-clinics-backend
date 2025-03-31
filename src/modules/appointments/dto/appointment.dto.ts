@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 export const createAppointmentSchema = z.object({
   date: z.date(),
+  initTime: z.date(),
+  endTime: z.date(),
   description: z.string(),
   roomId: z.number(),
   petId: z.number(),

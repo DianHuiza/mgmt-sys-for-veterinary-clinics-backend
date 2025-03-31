@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   CreateAppointmentDto,
   UpdateAppointmentDto,
@@ -8,23 +8,62 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
-  create(createAppointmentDto: CreateAppointmentDto) {
-    return 'This action adds a new appointment';
+  async create(createAppointmentDto: CreateAppointmentDto) {
+    const appointmentsOnDate = await this.prisma.appointment.findMany({
+      where: { date: createAppointmentDto.date },
+    });
+
+    const isOcupated = appointmentsOnDate.some((appointment) => {
+      return (
+        (appointment.initTime > createAppointmentDto.initTime
+          ? appointment.initTime
+          : createAppointmentDto) <
+        (appointment.endTime < createAppointmentDto.endTime
+          ? appointment.endTime
+          : createAppointmentDto.endTime)
+      );
+    });
+
+    if (isOcupated) {
+      throw new BadRequestException();
+    }
+
+    return this.prisma.appointment.create({
+      data: createAppointmentDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all appointments`;
+  findAll(page: number, pageSize: number, showDeleted: boolean = false) {
+    return this.prisma.appointment.findMany({
+      skip: (pageSize - 1) * page,
+      take: pageSize,
+      where: { deletedAt: showDeleted ? undefined : null },
+    });
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} appointment`;
+    return this.prisma.appointment.findUnique({
+      where: { id },
+    });
   }
 
   update(id: number, updateAppointmentDto: UpdateAppointmentDto) {
-    return `This action updates a #${id} appointment`;
+    return this.prisma.appointment.update({
+      where: { id },
+      data: updateAppointmentDto,
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} appointment`;
+    return this.prisma.appointment.delete({
+      where: { id },
+    });
+  }
+
+  softRemove(id: number) {
+    return this.prisma.appointment.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 }

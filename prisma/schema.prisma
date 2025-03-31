@@ -66,12 +66,15 @@ model Room {
   openAt       DateTime      @db.Time()
   closeAt      DateTime      @db.Time()
   name         String
+  deletedAt    DateTime?
   appointments Appointment[]
 }
 
 model Appointment {
   id          Int       @id @default(autoincrement())
-  date        DateTime
+  date        DateTime  @db.Date
+  initTime    DateTime  @db.Time
+  endTime     DateTime  @db.Time
   description String
   Room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
   roomId      Int

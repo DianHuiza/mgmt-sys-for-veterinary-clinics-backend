@@ -6,10 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import {
   CreateAppointmentDto,
+  ListingAppointmentQueryParams,
   UpdateAppointmentDto,
 } from './dto/appointment.dto';
 
@@ -23,8 +26,8 @@ export class AppointmentsController {
   }
 
   @Get()
-  findAll() {
-    return this.appointmentsService.findAll();
+  findAll(@Query() query: ListingAppointmentQueryParams) {
+    return this.appointmentsService.findAll(query.page, query.pageSize);
   }
 
   @Get(':id')
@@ -43,5 +46,10 @@ export class AppointmentsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.appointmentsService.remove(+id);
+  }
+
+  @Patch('delete/soft/:id')
+  softRemove(@Param('id', new ParseIntPipe()) id: string) {
+    return this.appointmentsService.softRemove(+id);
   }
 }

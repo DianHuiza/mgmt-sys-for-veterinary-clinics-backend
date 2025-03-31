@@ -5,12 +5,18 @@ import { CreateRoomDto, UpdateRoomDto } from './dto/rooms.dto';
 @Injectable()
 export class RoomsService {
   constructor(private readonly prisma: PrismaService) {}
-  create(createRoomDto: CreateRoomDto) {
-    return 'This action adds a new room';
+  async create(createRoomDto: CreateRoomDto) {
+    return this.prisma.room.create({
+      data: createRoomDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all rooms`;
+  findAll(page: number, pageSize: number, showDeleted: boolean = false) {
+    return this.prisma.room.findMany({
+      where: {
+        deletedAt: showDeleted ? undefined : null,
+      },
+    });
   }
 
   findOne(id: number) {
@@ -18,10 +24,30 @@ export class RoomsService {
   }
 
   update(id: number, updateRoomDto: UpdateRoomDto) {
-    return `This action updates a #${id} room`;
+    return this.prisma.room.update({
+      where: {
+        id,
+      },
+      data: updateRoomDto,
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} room`;
+    return this.prisma.room.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
+  softRemove(id: number) {
+    return this.prisma.room.update({
+      where: {
+        id,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
   }
 }
