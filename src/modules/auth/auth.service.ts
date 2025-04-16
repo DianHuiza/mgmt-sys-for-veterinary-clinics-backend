@@ -116,6 +116,10 @@ export class AuthService {
     return this.jwt.verify(token, { secret: env.JWT_SECRET });
   }
 
+  verifyWsToken(token) {
+    return this.jwt.verify(token, { secret: env.JWT_SECRET });
+  }
+
   blockToken(userId: number) {
     return this.prisma.refreshTokens.delete({
       where: {

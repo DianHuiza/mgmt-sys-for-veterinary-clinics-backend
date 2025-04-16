@@ -15,5 +15,6 @@ import { env } from 'src/env';
       secret: env.JWT_SECRET,
     }),
   ],
+  exports: [AuthService],
 })
 export class AuthModule {}
