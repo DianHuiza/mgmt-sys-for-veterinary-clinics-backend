@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './modules/auth/auth.guard';
+import { RoomsSocketModule } from './modules/rooms-socket/rooms-socket.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthGuard } from './modules/auth/auth.guard';
     AppointmentsModule,
     AuthModule,
     PrismaModule,
+    RoomsSocketModule,
   ],
   providers: [
     {
