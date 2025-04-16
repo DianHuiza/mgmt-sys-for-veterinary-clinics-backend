@@ -25,6 +25,7 @@ model Employee {
   appointments  Appointment[]
   Position      Position?      @relation(fields: [positionId], references: [id])
   positionId    Int?
+  Room          Room[]
 }
 
 model RefreshTokens {
@@ -59,15 +60,20 @@ model Pet {
   createdAt    DateTime      @default(now())
   deletedAt    DateTime?
   appointments Appointment[]
+  Room         Room[]
 }
 
 model Room {
-  id           Int           @id @default(autoincrement())
-  openAt       DateTime      @db.Time()
-  closeAt      DateTime      @db.Time()
-  name         String
-  deletedAt    DateTime?
-  appointments Appointment[]
+  id                Int           @id @default(autoincrement())
+  openAt            DateTime      @db.Time()
+  closeAt           DateTime      @db.Time()
+  name              String
+  deletedAt         DateTime?
+  appointments      Appointment[]
+  currentPet        Pet?          @relation(fields: [currentPetId], references: [id], onDelete: Cascade)
+  currentPetId      Int?
+  currentEmployee   Employee?     @relation(fields: [currentEmployeeId], references: [id], onDelete: Cascade)
+  currentEmployeeId Int?
 }
 
 model Appointment {
