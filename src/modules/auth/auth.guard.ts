@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,12 +11,15 @@ import { Observable } from 'rxjs';
 import { ROLES_KEY } from 'src/decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 import { Request } from 'express';
+import { TOKEN_NAME } from './constants';
+import { TokensManagmentService } from '../tokens-managment/tokens-managment.service';
+import { ForbiddenError } from '@casl/ability';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly jwtService: JwtService,
+    private readonly tokensManagment: TokensManagmentService,
   ) {}
 
   canActivate(
@@ -29,14 +33,14 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const accessToken = this.getTokenFromRequest(request);
     if (accessToken) {
-      const payload = this.jwtService.verify(accessToken);
+      const payload = this.tokensManagment.verifyAuthToken(accessToken);
       request.user = payload;
-      if (requiredRoles && requiredRoles.includes(payload.role)) {
+      if ((requiredRoles && requiredRoles.includes(payload.role)) || !requiredRoles) {
         return true;
       }
     }
     if (requiredRoles) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
 
     return true;
@@ -44,7 +48,7 @@ export class AuthGuard implements CanActivate {
 
   getTokenFromRequest(request: Request) {
     try {
-      const [prefix, token] = request.cookies.authorization.split(' ');
+      const [prefix, token] = request.cookies[TOKEN_NAME.AUTHORIZATION].split(' ');
       if (prefix === 'Bearer') {
         return token;
       }

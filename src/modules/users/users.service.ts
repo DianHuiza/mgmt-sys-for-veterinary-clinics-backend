@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/employee.dto';
+import { CreateUserDto, UpdateUserDto } from './dto/users.dto';
 
 @Injectable()
-export class EmployeesService {
+export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
-  create(createEmployeeDto: CreateEmployeeDto) {
-    return this.prisma.employee.create({
+  create(createEmployeeDto: CreateUserDto) {
+    return this.prisma.user.create({
       data: createEmployeeDto,
     });
   }
@@ -16,7 +16,7 @@ export class EmployeesService {
     pageSize: number = 20,
     showDeleted: boolean = false,
   ) {
-    return this.prisma.employee.findMany({
+    return this.prisma.user.findMany({
       where: {
         deletedAt: showDeleted ? undefined : null,
       },
@@ -26,15 +26,15 @@ export class EmployeesService {
   }
 
   findOne(id: number) {
-    return this.prisma.employee.findUnique({
+    return this.prisma.user.findUnique({
       where: {
         id,
       },
     });
   }
 
-  update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
-    return this.prisma.employee.update({
+  update(id: number, updateEmployeeDto: UpdateUserDto) {
+    return this.prisma.user.update({
       where: {
         id,
       },
@@ -43,7 +43,7 @@ export class EmployeesService {
   }
 
   remove(id: number) {
-    return this.prisma.employee.delete({
+    return this.prisma.user.delete({
       where: {
         id,
       },
@@ -51,7 +51,7 @@ export class EmployeesService {
   }
 
   softRemove(id: number) {
-    return this.prisma.employee.update({
+    return this.prisma.user.update({
       where: {
         id,
       },

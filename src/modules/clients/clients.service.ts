@@ -14,14 +14,23 @@ export class ClientsService {
   findAll(
     page: number = 1,
     pageSize: number = 20,
+    query?: string,
     showDeleted: boolean = false,
+    sortBy?: string,
+    sortDirection?: string,
   ) {
     return this.prisma.client.findMany({
       where: {
         deletedAt: showDeleted ? undefined : null,
+        name: {
+          contains: query,
+        }
       },
       take: pageSize,
       skip: pageSize * (page - 1),
+      orderBy: {
+        [sortBy ?? 'name']: sortDirection ?? 'asc',
+      }
     });
   }
 

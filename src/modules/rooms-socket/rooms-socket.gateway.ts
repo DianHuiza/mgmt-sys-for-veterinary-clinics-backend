@@ -9,7 +9,6 @@ import {
 import { RoomsService } from '../rooms/rooms.service';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
-import { UnauthorizedException } from '@nestjs/common';
 
 @WebSocketGateway({ namespace: 'rooms' })
 export class RoomsSocketGateway {

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,15 +10,39 @@ import { JwtService } from '@nestjs/jwt';
 import { env } from 'src/env';
 import { Role } from 'src/enums/role.enum';
 import { authConstants } from './constants';
+import { v4 as uuidv4 } from 'uuid';
+import { TokensManagmentService } from '../tokens-managment/tokens-managment.service';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
-    private jwt: JwtService,
+    private readonly tokensManagment: TokensManagmentService,
   ) {}
+
+  async onModuleInit() {
+    const admin = await this.prisma.user.findFirst({
+      where: {
+        role: Role.ADMIN,
+      },
+    });
+
+    if (!admin) {
+      console.log('creating admin');
+      await this.prisma.user.create({
+        data: {
+          name: 'Admin',
+          email: 'admin@admin.com',
+          role: Role.ADMIN,
+          password: bcrypt.hashSync('admin', 10),
+        },
+      });
+    }
+  }
+
   async login(email: string, password: string) {
-    const user = await this.prisma.employee.findUnique({
+    console.log(email, password);
+    const user = await this.prisma.user.findUnique({
       where: {
         email,
       },
@@ -28,102 +53,50 @@ export class AuthService {
 
     if (!user) throw new BadRequestException();
 
-    if (!bcrypt.compareSync(user.password, password)) {
+    if (!bcrypt.compareSync(password, user.password)) {
       throw new BadRequestException();
     }
 
-    const { token, refreshToken } = this.generateNewTokens(
-      user.id,
-      user.name,
-      user.role,
-    );
-
-    this.updateRefreshToken(user.id, refreshToken);
-
-    return {
-      token: `Bearer ${token}`,
-      refreshToken: `Bearer ${refreshToken}`,
-      user: { name: user.name, role: user.role, sub: user.id },
-    };
+    return this.tokensManagment.generateAndSaveTokens(user.id, user.name, user.role);
   }
 
-  async refreshToken(userId, providedRefreshToken) {
-    const tokenData = await this.prisma.refreshTokens.findFirst({
-      where: {
-        token: providedRefreshToken,
-        employeeId: userId,
-      },
-      include: {
-        employee: true,
-      },
-    });
-    if (!tokenData || tokenData?.token !== providedRefreshToken) {
-      throw new UnauthorizedException();
+  async refreshToken(providedRefreshToken: string) {
+    let userId: number
+    let payload
+    try {
+      payload = this.tokensManagment.verifyRefreshToken(providedRefreshToken);
+      userId = payload.sub;
+    } catch (e) {
+      return undefined;
     }
 
-    const { employee } = tokenData;
-
-    const { token, refreshToken: newRefreshToken } = this.generateNewTokens(
-      employee.id,
-      employee.name,
-      employee.role,
-    );
-
-    this.updateRefreshToken(userId, newRefreshToken);
-
-    return {
-      token: `Bearer ${token}`,
-      refreshToken: `Bearer ${newRefreshToken}`,
-      user: { name: employee.name, role: employee.role, id: employee.id },
-    };
-  }
-
-  generateNewTokens(userId: number, userName: string, userRole: Role) {
-    return {
-      token: this.jwt.sign(
-        { sub: userId, name: userName, rol: userRole },
-        {
-          secret: env.JWT_SECRET,
-          expiresIn: authConstants.TOKEN_DURATION / 1000,
-        },
-      ),
-      refreshToken: this.jwt.sign(
-        { sub: userId },
-        {
-          secret: env.JWT_SECRET,
-          expiresIn: authConstants.REFRESH_TOKEN_DURATION / 1000,
-        },
-      ),
-    };
-  }
-
-  private async updateRefreshToken(userId: number, refreshToken: string) {
-    await this.prisma.refreshTokens.upsert({
+    const tokenData = await this.prisma.refreshTokens.findFirst({
       where: {
-        employeeId: userId,
+        userId: userId,
       },
-      update: {
-        token: refreshToken,
-      },
-      create: {
-        employeeId: userId,
-        token: refreshToken,
+      include: {
+        user: true,
       },
     });
-  }
+    console.log(tokenData?.jti, payload.jti)
+    if (!tokenData || tokenData?.jti !== payload.jti) {
+      console.log('invalid refresh token');
+      throw new UnauthorizedException('Invalid refresh token');
+    }
 
-  verifyToken(token) {
-    return this.jwt.verify(token, { secret: env.JWT_SECRET });
+    const { user } = tokenData;
+
+    return this.tokensManagment.generateAndSaveTokens(user.id, user.name, user.role);
   }
 
   verifyWsToken(token) {
-    return this.jwt.verify(token, { secret: env.JWT_SECRET });
+    return this.tokensManagment.verifyWsToken(token);
   }
 
   blockToken(userId: number) {
     return this.prisma.refreshTokens.delete({
       where: {
-        employeeId: userId,
+        userId: userId,
       },
     });
   }

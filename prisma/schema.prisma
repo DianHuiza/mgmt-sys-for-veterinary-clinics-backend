@@ -13,7 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Employee {
+model User {
   id            Int            @id @default(autoincrement())
   name          String
   email         String         @unique
@@ -30,9 +30,10 @@ model Employee {
 
 model RefreshTokens {
   id         Int      @id @default(autoincrement())
-  employeeId Int      @unique
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  token      String   @unique
+  userId Int      @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @db.VarChar(1024)
+  jti        String   @db.VarChar(256)
   createdAt  DateTime @default(now())
 }
 
@@ -72,8 +73,8 @@ model Room {
   appointments      Appointment[]
   currentPet        Pet?          @relation(fields: [currentPetId], references: [id], onDelete: Cascade)
   currentPetId      Int?
-  currentEmployee   Employee?     @relation(fields: [currentEmployeeId], references: [id], onDelete: Cascade)
-  currentEmployeeId Int?
+  currentUser   User?     @relation(fields: [currentUserId], references: [id], onDelete: Cascade)
+  currentUserId Int?
 }
 
 model Appointment {
@@ -86,7 +87,7 @@ model Appointment {
   roomId      Int
   Pet         Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
   petId       Int
-  atendedBy   Employee? @relation(fields: [atendedById], references: [id], onDelete: Cascade)
+  atendedBy   User? @relation(fields: [atendedById], references: [id], onDelete: Cascade)
   atendedById Int?
   createdAt   DateTime  @default(now())
   deletedAt   DateTime?
@@ -95,7 +96,7 @@ model Appointment {
 model Position {
   id        Int        @id @default(autoincrement())
   name      String
-  employees Employee[]
+  users User[]
 }
 
 enum Role {
@@ -118,3 +119,4 @@ model ConfigGroup {
   name    String
   configs Config[]
 }
+

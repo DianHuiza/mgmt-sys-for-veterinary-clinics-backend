@@ -67,7 +67,7 @@ export class RoomsService {
   }
 
   async assignEmployee(roomId: number, employeeId: number){
-    const employee = await this.prisma.employee.findUnique({
+    const employee = await this.prisma.user.findUnique({
       where: {
         id: employeeId
       }
@@ -82,14 +82,14 @@ export class RoomsService {
       }
     })
 
-    if(room?.currentEmployeeId) throw new Error('Room is already assigned to an employee')
+    if(room?.currentUserId) throw new Error('Room is already assigned to an employee')
 
     return this.prisma.room.update({
       where: {
         id: roomId,
       },
       data: {
-        currentEmployee: {
+        currentUser: {
           connect: {
             id: employeeId
           }
@@ -104,7 +104,7 @@ export class RoomsService {
         id: roomId,
       },
       data: {
-        currentEmployee: {
+        currentUser: {
           disconnect: true
         }
       },

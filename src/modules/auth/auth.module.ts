@@ -4,16 +4,14 @@ import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { env } from 'src/env';
+import { TokensManagmentModule } from '../tokens-managment/tokens-managment.module';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService],
   imports: [
     PrismaModule,
-    JwtModule.register({
-      global: true,
-      secret: env.JWT_SECRET,
-    }),
+    TokensManagmentModule,
   ],
   exports: [AuthService],
 })

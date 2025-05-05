@@ -1,3 +1,4 @@
+import { listingSchema } from 'src/dtos/listing.dto';
 import { paginationSchema } from 'src/dtos/pagination.dto';
 import { z } from 'zod';
 
@@ -13,8 +14,8 @@ export const createClientSchema = z
 
 export const updateClientSchema = createClientSchema.partial();
 
-export const listingClientSchema = paginationSchema;
+export const listingClientSchema = paginationSchema.merge(listingSchema);
 
-export type CreateClientDto = z.infer<typeof createClientSchema>; // Sin el partial, los atributos son requeridos.
-export type UpdateClientDto = z.infer<typeof updateClientSchema>; // Con el partial, los atributos son opcionales.
+export type CreateClientDto = z.infer<typeof createClientSchema>; 
+export type UpdateClientDto = z.infer<typeof updateClientSchema>;
 export type ListingClientQueryParams = z.infer<typeof listingClientSchema>;

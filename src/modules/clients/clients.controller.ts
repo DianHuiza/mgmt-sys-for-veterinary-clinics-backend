@@ -35,7 +35,7 @@ export class ClientsController {
   findAll(
     @Query(new ZodPipe(listingClientSchema)) query: ListingClientQueryParams,
   ) {
-    return this.clientsService.findAll(query.page, query.pageSize);
+    return this.clientsService.findAll(query.page, query.pageSize, query.search, query.showDeleted);
   }
 
   @Get(':id')

@@ -6,9 +6,10 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { PetsService } from './pets.service';
-import { CreatePetDto, UpdatePetDto } from './dto/pets.dto';
+import { CreatePetDto, ListingPetQueryParams, UpdatePetDto } from './dto/pets.dto';
 
 @Controller('pets')
 export class PetsController {
@@ -20,8 +21,8 @@ export class PetsController {
   }
 
   @Get()
-  findAll() {
-    return this.petsService.findAll();
+  findAll(@Query() query: ListingPetQueryParams) {
+    return this.petsService.findAll(query.page, query.pageSize);
   }
 
   @Get(':id')
